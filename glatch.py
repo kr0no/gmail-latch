@@ -2,8 +2,6 @@ import time, latch
 from mechanize import Browser
 
 # GMAIL SETTINGS
-LOGIN_URL = 'https://accounts.google.com/ServiceLogin?service=mail'
-CHECK_URL = 'https://mail.google.com/mail/u/0/?ui=2&ik=4b23d5edac&view=ac'
 USER = 'YOUR_GMAIL_USER'
 PASSWD = 'YOUR_GMAIL_PASSWORD'
 
@@ -31,21 +29,27 @@ f.close()
 # We use mechanize to enter in our gmail account
 br = Browser()
 br.set_handle_robots(False)
-br.open(LOGIN_URL)
+br.open('https://accounts.google.com/ServiceLogin?service=mail')
 br.select_form(nr=0)
 br.form["Email"] = USER
 br.form["Passwd"] = PASSWD
-resp = br.submit()
+br.submit()
 
 # Infinite loop checking for unauthorized sessions
 while True:
 	time.sleep(TIME)
-	br.open(CHECK_URL)
+	br.open('https://mail.google.com/mail/u/0/?ui=2&ik=4b23d5edac&view=ac')
 	br.select_form(nr=0)
 	for control in br.form.controls:
 		if(control.type == 'submit'):
+			print '[+] Opened sessions detected. Checking Latch status...'
 			status = api.status(accountId)
 			statusData = status.get_data()
-			if(statusData['operations'][APP_ID]['status'] == 'off'):
-				print 'Intruder detected'
-				br.submit()
+			try:
+				if(statusData['operations'][APP_ID]['status'] == 'off'):
+					print '[!] INTRUDER'
+					br.submit()
+				else:
+					print '[+] Authorized'
+			except:
+				print 'Latch error (maybe an AccountId error, try to delete \'account_id\' content)'
